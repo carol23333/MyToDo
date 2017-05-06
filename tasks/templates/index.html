@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Todo</title>
+	<script src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+		<link href="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+		<script src="http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js"></script>
+		<script src="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<script>
+
+      var csrftoken;
+			var editId = null;
+
+      csrftoken = getCookie('csrftoken');
+
+      function csrfSafeMethod(method) {
+    // these HTTP methods do not require CSRF protection
+    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+}
+
+
+      $(document).ready(function () {
+        $.ajaxSetup({
+          beforeSend: function(xhr, settings) {
+          if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+          }
+          }
+        });
+      })
+			function handleShowall() {
+				$.get("/task/", function(data){
+						$("#yly").empty();
+				    for(var i = 0; i < data.length; ++i) {
+							$("#yly").append("<tr>");
+							if(data[i].is_finished) {
+								$("#yly").append("<td width='50px'><input type='checkbox' checked /></td>");
+							}
+							else  {
+								$("#yly").append("<td width='50px'><input type='checkbox'  /></td>");
+							}
+							$("#yly").append("<td width='100px'>" + data[i].name + "</td>");
+							$("#yly").append("<td width='700px'>" + data[i].content + "</td>");
+							$("#yly").append("<td width='150px'>" + data[i].expired_date + "</td>");
+							$("#yly").append(`<td width='100px'><button type='button' class='btn btn-info btn-sm' onclick='showEditModal(${data[i].id})'>Edit</button></td>`);
+							$("#yly").append(`<td width='100px'><button type='button' class='btn btn-danger btn-sm' onclick='deleteTask(${data[i].id})'>Delete</button></td></tr>`);
+						}
+				})
+        }
+
+        function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          var cookies = document.cookie.split(';');
+          for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+       }
+      return cookieValue;
+    }
+
+		function showEditModal(id) {
+			editId = id;
+			$('#editModal').modal('show');
+		}
+		
+
+			function handleAdd() {
+        $.post('/task/', {
+          csrfmiddlewaretoken: csrftoken,
+          user: 1,
+          name: $('input[name="titleadd"]').val(),
+          content: $('input[name="contentadd"]').val(),
+          expired_date: $('#selYearadd').val() + '-' + $('#selMonthadd').val() + '-' + $('#selDayadd').val()
+        }, function(data) {
+          console.log(data);
+        })
+      }
+
+
+      function deleteTask(id) {
+        $.ajax('/task/' + id + '/', {
+          method: 'DELETE',
+          success: function(data, status, xhr) {
+						if (xhr.status === 204) {
+							alert('删除成功');
+							location.reload()
+						}
+          }
+        })
+      }
+
+			function patch(data) {
+				$.ajax(`/task/${editId}/`, {
+					method: 'PATCH',
+					data: data,
+					success: function(data, status, xhr) {
+						if (xhr.status === 200){
+							console.log(data);
+							alert('修改成功');
+							location.reload();
+						}
+					}
+				})
+			}
+
+      function showModal(id) {
+				editId = id;
+        $('#myModal').modal('show');
+      }
+
+		</script>
+
+		<div class="container">
+			<div class="row clearfix">
+				<div class="col-md-12 column">
+					<nav class="navbar navbar-default" role="navigation">
+						<div class="navbar-header">
+				 			<a class="navbar-brand" href="#">
+				 				<span class="icon-bar">MyTodo</span>
+				 			</a>
+						</div>
+			
+						<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+							<form class="navbar-form navbar-right" role="search">
+								<div class="form-group">
+									<input type="text" class="form-control" />
+								</div>
+								<button type="submit" class="btn btn-default">Search</button>
+							</form>
+						</div>
+					</nav>
+
+					<div class="jumbotron">
+						<center><h1>MyTodo</h1></center>
+						<center><p>
+							The shortest way to do many things is to do only one thing at a time.
+						</p></center>
+					</div>
+
+					<div class="row clearfix">
+						<div class="col-md-12 column">
+							<table class="table table-striped">
+  							<caption>Tasks</caption>
+  							<tbody id="yly">
+  							</tbody>
+							</table>
+							<button type='button' class='btn btn-default btn-sm'  onclick='showModal()'>+ Add</button>
+
+							<button type='button' class='btn btn-default btn-sm' onclick='handleShowall()'>Show All</button>
+
+
+
+	<script>
+	$(function () { $('#myModal').modal({
+		keyboard: true
+	})});
+	</script>
+
+
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" 
+							aria-hidden="true">×
+					</button>
+					<h4 class="modal-title" id="myModalLabel">
+						Add task
+					</h4>
+				</div>
+
+	<div class="row clearfix">
+							<div class="col-md-12 column">
+								<table class="table">
+									<tbody>
+										<tr>
+											<td width="300px" align="right">Title: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+                        <input type="text" name="titleadd" /></td>
+                        <input type="hidden" name="user" value="{{ user_id }}">
+											<td><font color="red">*</font></td>
+										</tr>
+										<tr>
+											<td width="300px" align="right">Expire Date: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+												<select id="selYearadd" >
+													<option value="2017">2017</option>
+												</select>
+												<select id="selMonthadd">
+													<option value ="1">1</option>
+													<option value ="2">2</option>
+													<option value ="3">3</option>
+													<option value ="4">4</option>
+													<option value ="5">5</option>
+													<option value ="6">6</option>
+													<option value ="7">7</option>
+													<option value ="8">8</option>
+													<option value ="9">9</option>
+													<option value ="10">10</option>
+													<option value ="11">11</option>
+													<option value ="12">12</option>
+												</select>
+												<select id="selDayadd">
+													<option value ="1">1</option>
+													<option value ="2">2</option>
+													<option value ="3">3</option>
+													<option value ="4">4</option>
+													<option value ="5">5</option>
+												</select>
+											</td>
+											<td><font color="red">*</font></td>
+										</tr>
+										<tr>
+											<td width="300px" align="right">Priority: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+												<select id="setPri">
+													<option value ="1">!</option>
+													<option value ="2">!!</option>
+													<option value ="3">!!!</option>
+												</select>
+											<td><font color="red">*</font></td>
+										</tr>
+										<tr>
+											<td width="300px" align="right">Detail: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+                        <input type="text" style="width: 300px" name="contentadd" /></td>
+											<td></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" 
+							data-dismiss="modal">Cancel
+					</button>
+					<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal" onclick="handleAdd()">
+						Confirm
+					</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+
+	<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" 
+							aria-hidden="true">×
+					</button>
+					<h4 class="modal-title" id="myModalLabel">
+						Edit task
+					</h4>
+				</div>
+
+	<div class="row clearfix">
+							<div class="col-md-12 column">
+								<table class="table">
+									<tbody>
+
+
+										<tr>
+											<td width="300px" align="right">Checkbox: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+												<input type="checkbox" name="checkboxedit" /></td>
+											<td><font color="red">*</font></td>
+										</tr>
+
+										<tr>
+											<td width="300px" align="right">Title: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+                        <input type="text" name="titleedit" /></td>
+                        <input type="hidden" name="user" value="{{ user_id }}">
+											<td><font color="red">*</font></td>
+										</tr>
+										<tr>
+											<td width="300px" align="right">Expire Date: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+												<select id="selYearedit" >
+													<option value="2017">2017</option>
+												</select>
+												<select id="selMonthedit">
+													<option value ="1">1</option>
+													<option value ="2">2</option>
+													<option value ="3">3</option>
+													<option value ="4">4</option>
+													<option value ="5">5</option>
+													<option value ="6">6</option>
+													<option value ="7">7</option>
+													<option value ="8">8</option>
+													<option value ="9">9</option>
+													<option value ="10">10</option>
+													<option value ="11">11</option>
+													<option value ="12">12</option>
+												</select>
+												<select id="selDayedit">
+													<option value ="1">1</option>
+													<option value ="2">2</option>
+													<option value ="3">3</option>
+													<option value ="4">4</option>
+													<option value ="5">5</option>
+												</select>
+											</td>
+											<td><font color="red">*</font></td>
+										</tr>
+										<tr>
+											<td width="300px" align="right">Priority: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+												<select id="setPri">
+													<option value ="1">!</option>
+													<option value ="2">!!</option>
+													<option value ="3">!!!</option>
+												</select>
+											<td><font color="red">*</font></td>
+										</tr>
+										<tr>
+											<td width="300px" align="right">Detail: </td>
+											<td width="500px" bgColor="#EEEEEE" align="left">
+                        <input type="text" style="width: 300px" name="contentedit" /></td>
+											<td></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" 
+							data-dismiss="modal">Cancel
+					</button>
+					<button type="button" class="btn btn-primary patch" data-toggle="modal" data-target="#myModal" >
+						Confirm
+					</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+
+
+
+							<center>
+								<ul class="pagination"><!-- 分页 -->
+									<li>
+					 					<a href="#">Prev</a>
+									</li>
+										<li>
+						 				<a href="#">1</a>
+									</li>
+									<li>
+						 				<a href="#">2</a>
+									</li>
+									<li>
+						 				<a href="#">Next</a>
+									</li>
+								</ul>
+							</center>
+						</div>
+					</div>
+				</div>
+			</div>			
+		</div>
+	</body>
+	<script type="text/javascript">
+	$('.patch').click(function(){
+		var data = {
+			is_finished: $('input[name="checkboxedit"]').val() === 'on'? true: false,//  $('input').val()
+			name: $('input[name="titleedit"]').val(),//  $('input').val()
+      content: $('input[name="contentedit"]').val(),
+      expired_date: $('#selYearedit').val() + '-' + $('#selMonthedit').val() + '-' + $('#selDayedit').val()
+		};
+		patch(data);
+	})
+	</script>
+</html>
